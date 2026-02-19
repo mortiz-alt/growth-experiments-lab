@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rasa — Own Your AI Agents</title>
+  <style>
+    /* ── Reset & Base ──────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple-900: #1a0536;
+      --purple-800: #2d0b5a;
+      --purple-700: #4a1a8a;
+      --purple-600: #6d28d9;
+      --purple-500: #8b5cf6;
+      --purple-400: #a78bfa;
+      --purple-300: #c4b5fd;
+      --purple-200: #ddd6fe;
+      --purple-100: #ede9fe;
+      --purple-50:  #f5f3ff;
+
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50:  #f8fafc;
+
+      --teal-500: #14b8a6;
+      --teal-400: #2dd4bf;
+      --teal-300: #5eead4;
+
+      --orange-500: #f97316;
+      --orange-400: #fb923c;
+
+      --white: #ffffff;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: var(--font);
+      background: var(--slate-900);
+      color: var(--slate-200);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Typography ─────────────────────────────── */
+    h1, h2, h3, h4, h5 { line-height: 1.2; font-weight: 700; }
+    h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); letter-spacing: -0.03em; }
+    h2 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.02em; }
+    h3 { font-size: 1.5rem; }
+    h4 { font-size: 1.125rem; }
+    p  { color: var(--slate-400); }
+
+    a { color: var(--purple-400); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--purple-300); }
+
+    /* ── Layout ──────────────────────────────────── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    section {
+      padding: 6rem 0;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--purple-400);
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      padding: 0.375rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-heading {
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+
+    .section-subheading {
+      font-size: 1.25rem;
+      max-width: 640px;
+      color: var(--slate-400);
+      margin-bottom: 3rem;
+    }
+
+    .text-center { text-align: center; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+
+    /* ── Buttons ─────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.875rem 2rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple-600), var(--purple-500));
+      color: var(--white);
+      box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4), 0 4px 16px rgba(139, 92, 246, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4), 0 8px 24px rgba(139, 92, 246, 0.4);
+      color: var(--white);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--slate-200);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--white);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--purple-400);
+      padding: 0.875rem 1rem;
+    }
+    .btn-ghost:hover { color: var(--purple-300); }
+
+    .btn-sm {
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+    }
+
+    /* ── Nav ──────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 0;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo svg { width: 32px; height: 32px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--slate-400);
+      padding: 0.5rem 0.875rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--slate-300);
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    /* ── Hero ─────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 6rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 900px;
+      background: radial-gradient(circle, rgba(109, 40, 217, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      right: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero .container {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .hero-content { max-width: 600px; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 100px;
+      padding: 0.375rem 1rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--purple-300);
+      margin-bottom: 2rem;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--teal-400);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .hero h1 {
+      color: var(--white);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--purple-400), var(--teal-400));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-description {
+      font-size: 1.25rem;
+      line-height: 1.7;
+      color: var(--slate-400);
+      margin-bottom: 2.5rem;
+      max-width: 520px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .hero-proof {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hero-stat {
+      text-align: left;
+    }
+    .hero-stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--white);
+    }
+    .hero-stat-label {
+      font-size: 0.8125rem;
+      color: var(--slate-500);
+    }
+
+    /* ── Hero Visual (Terminal) ───────────────────── */
+    .hero-visual {
+      position: relative;
+    }
+
+    .terminal {
+      background: var(--slate-800);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 1.25rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+
+    .terminal-title {
+      margin-left: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--slate-500);
+      font-family: var(--mono);
+    }
+
+    .terminal-body {
+      padding: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.8125rem;
+      line-height: 1.8;
+      min-height: 340px;
+    }
+
+    .terminal-line {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .terminal-prompt { color: var(--teal-400); font-weight: 600; }
+    .terminal-cmd { color: var(--slate-200); }
+    .terminal-comment { color: var(--slate-600); }
+    .terminal-output { color: var(--slate-400); padding-left: 1.6rem; }
+    .terminal-success { color: var(--teal-400); padding-left: 1.6rem; }
+    .terminal-accent { color: var(--purple-400); }
+    .terminal-flag { color: var(--orange-400); }
+    .terminal-string { color: var(--teal-300); }
+
+    .terminal-body > div { margin-bottom: 0.25rem; }
+
+    .hero-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, rgba(109, 40, 217, 0.1) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* ── Logos / Social Proof Bar ─────────────────── */
+    .logos-bar {
+      padding: 4rem 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .logos-label {
+      text-align: center;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--slate-600);
+      margin-bottom: 2rem;
+    }
+
+    .logos-grid {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+      opacity: 0.4;
+    }
+
+    .logo-item {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--slate-300);
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Problem Section ─────────────────────────── */
+    .problem {
+      background: linear-gradient(180deg, var(--slate-900) 0%, rgba(26, 5, 54, 0.3) 100%);
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .problem-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .problem-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .problem-card.bad::before {
+      background: linear-gradient(90deg, #ef4444, transparent);
+    }
+
+    .problem-card.bad .problem-card-label { color: #f87171; }
+
+    .problem-card.also-bad::before {
+      background: linear-gradient(90deg, var(--orange-500), transparent);
+    }
+    .problem-card.also-bad .problem-card-label { color: var(--orange-400); }
+
+    .problem-card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+
+    .problem-card h3 {
+      color: var(--white);
+      margin-bottom: 0.75rem;
+    }
+
+    .problem-card p {
+      font-size: 0.9375rem;
+      color: var(--slate-400);
+      margin-bottom: 1.25rem;
+    }
+
+    .problem-card-list {
+      list-style: none;
+    }
+
+    .problem-card-list li {
+      position: relative;
+      padding-left: 1.25rem;
+      font-size: 0.875rem;
+      color: var(--slate-500);
+      margin-bottom: 0.375rem;
+    }
+
+    .problem-card-list li::before {
+      content: '×';
+      position: absolute;
+      left: 0;
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    .problem-card.also-bad .problem-card-list li::before {
+      color: var(--orange-500);
+    }
+
+    .solution-banner {
+      background: linear-gradient(135deg, rgba(109, 40, 217, 0.15), rgba(20, 184, 166, 0.1));
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 16px;
+      padding: 2.5rem 3rem;
+      text-align: center;
+    }
+
+    .solution-banner h3 {
+      color: var(--white);
+      font-size: 1.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .solution-banner p {
+      font-size: 1.125rem;
+      color: var(--slate-300);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* ── Features Section ────────────────────────── */
+    .features {
+      background: var(--slate-900);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(139, 92, 246, 0.3);
+      background: rgba(139, 92, 246, 0.04);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+    }
+
+    .feature-icon.purple {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .feature-icon.teal {
+      background: rgba(20, 184, 166, 0.1);
+      border: 1px solid rgba(20, 184, 166, 0.2);
+    }
+
+    .feature-icon.orange {
+      background: rgba(249, 115, 22, 0.1);
+      border: 1px solid rgba(249, 115, 22, 0.2);
+    }
+
+    .feature-card h4 {
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.9375rem;
+      color: var(--slate-400);
+      line-height: 1.6;
+    }
+
+    .feature-card .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 1rem;
+    }
+
+    .feature-tag {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--slate-500);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 0.25rem 0.625rem;
+      border-radius: 6px;
+    }
+
+    /* ── Channel Section ─────────────────────────── */
+    .channels {
+      background: linear-gradient(180deg, var(--slate-900) 0%, rgba(26, 5, 54, 0.2) 50%, var(--slate-900) 100%);
+    }
+
+    .channel-visual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .channel-diagram {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 2.5rem;
+      position: relative;
+    }
+
+    .channel-center {
+      text-align: center;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, rgba(109, 40, 217, 0.15), rgba(109, 40, 217, 0.05));
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .channel-center h4 { color: var(--purple-300); font-size: 1rem; }
+    .channel-center p { font-size: 0.8125rem; color: var(--slate-500); margin-top: 0.25rem; }
+
+    .channel-spokes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .channel-spoke {
+      text-align: center;
+      padding: 1rem 0.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+
+    .channel-spoke:hover {
+      border-color: rgba(20, 184, 166, 0.3);
+      background: rgba(20, 184, 166, 0.04);
+    }
+
+    .channel-spoke-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .channel-spoke-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--slate-300);
+    }
+
+    .channel-spoke-sub {
+      font-size: 0.6875rem;
+      color: var(--slate-600);
+    }
+
+    .channel-info h2 {
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+
+    .channel-info > p {
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    .channel-benefits {
+      list-style: none;
+    }
+
+    .channel-benefits li {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      font-size: 0.9375rem;
+      color: var(--slate-300);
+    }
+
+    .channel-benefits li .check {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(20, 184, 166, 0.1);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.625rem;
+      color: var(--teal-400);
+      margin-top: 0.15rem;
+    }
+
+    /* ── Personas / Role Tabs ────────────────────── */
+    .personas {
+      background: var(--slate-900);
+    }
+
+    .persona-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 3rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      justify-content: center;
+    }
+
+    .persona-tab {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--slate-400);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .persona-tab:hover {
+      border-color: rgba(139, 92, 246, 0.3);
+      color: var(--slate-200);
+    }
+
+    .persona-tab.active {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: var(--purple-300);
+    }
+
+    .persona-panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .persona-panel.active {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .persona-profile {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 2.5rem;
+    }
+
+    .persona-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      color: var(--white);
+    }
+
+    .persona-name {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.25rem;
+    }
+
+    .persona-role {
+      font-size: 0.875rem;
+      color: var(--purple-400);
+      margin-bottom: 1.5rem;
+    }
+
+    .persona-quote {
+      font-size: 1.0625rem;
+      font-style: italic;
+      color: var(--slate-300);
+      border-left: 3px solid var(--purple-600);
+      padding-left: 1.25rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+
+    .persona-pains-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--slate-500);
+      margin-bottom: 0.75rem;
+    }
+
+    .persona-pains {
+      list-style: none;
+    }
+
+    .persona-pains li {
+      font-size: 0.875rem;
+      color: var(--slate-400);
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .persona-pains li span.pain-icon {
+      color: #f87171;
+      flex-shrink: 0;
+    }
+
+    .persona-solution {
+      padding-top: 0.5rem;
+    }
+
+    .persona-solution h3 {
+      color: var(--white);
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+    }
+
+    .persona-solution-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+
+    .persona-solution-item:hover {
+      border-color: rgba(20, 184, 166, 0.3);
+    }
+
+    .persona-solution-item h4 {
+      color: var(--teal-400);
+      font-size: 1rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .persona-solution-item p {
+      font-size: 0.875rem;
+      color: var(--slate-400);
+    }
+
+    /* ── Comparison Table ─────────────────────────── */
+    .comparison {
+      background: linear-gradient(180deg, var(--slate-900) 0%, rgba(26, 5, 54, 0.15) 100%);
+    }
+
+    .comparison-table-wrap {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    .comparison-table thead th {
+      padding: 1.25rem 1.5rem;
+      text-align: left;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--slate-400);
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .comparison-table thead th:first-child {
+      color: var(--slate-500);
+    }
+
+    .comparison-table thead th.highlight {
+      color: var(--purple-400);
+      background: rgba(139, 92, 246, 0.06);
+    }
+
+    .comparison-table tbody td {
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--slate-400);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .comparison-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--slate-300);
+    }
+
+    .comparison-table tbody td.highlight {
+      color: var(--slate-200);
+      background: rgba(139, 92, 246, 0.04);
+    }
+
+    .comparison-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .check-icon { color: var(--teal-400); font-weight: 700; }
+    .x-icon { color: var(--slate-600); }
+    .partial-icon { color: var(--orange-400); }
+
+    /* ── Architecture Section ─────────────────────── */
+    .architecture {
+      background: var(--slate-900);
+    }
+
+    .arch-diagram {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 3rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    .arch-layers {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .arch-layer {
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .arch-layer-label {
+      font-family: var(--font);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .arch-layer-items {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .arch-item {
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+    }
+
+    .arch-layer.authoring {
+      background: rgba(139, 92, 246, 0.06);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+    .arch-layer.authoring .arch-layer-label { color: var(--purple-400); }
+    .arch-layer.authoring .arch-item {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      color: var(--purple-300);
+    }
+
+    .arch-layer.engine {
+      background: rgba(20, 184, 166, 0.04);
+      border: 1px solid rgba(20, 184, 166, 0.12);
+    }
+    .arch-layer.engine .arch-layer-label { color: var(--teal-400); }
+    .arch-layer.engine .arch-item {
+      background: rgba(20, 184, 166, 0.08);
+      border: 1px solid rgba(20, 184, 166, 0.2);
+      color: var(--teal-300);
+    }
+
+    .arch-layer.channels-layer {
+      background: rgba(249, 115, 22, 0.04);
+      border: 1px solid rgba(249, 115, 22, 0.12);
+    }
+    .arch-layer.channels-layer .arch-layer-label { color: var(--orange-400); }
+    .arch-layer.channels-layer .arch-item {
+      background: rgba(249, 115, 22, 0.08);
+      border: 1px solid rgba(249, 115, 22, 0.2);
+      color: var(--orange-400);
+    }
+
+    .arch-layer.infra {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .arch-layer.infra .arch-layer-label { color: var(--slate-400); }
+    .arch-layer.infra .arch-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--slate-300);
+    }
+
+    .arch-arrow {
+      text-align: center;
+      color: var(--slate-600);
+      font-size: 1.25rem;
+    }
+
+    /* ── Metrics Section ─────────────────────────── */
+    .metrics {
+      background: linear-gradient(180deg, rgba(26, 5, 54, 0.2) 0%, var(--slate-900) 100%);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+      border-color: rgba(139, 92, 246, 0.3);
+      transform: translateY(-4px);
+    }
+
+    .metric-value {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-value.purple { color: var(--purple-400); }
+    .metric-value.teal { color: var(--teal-400); }
+    .metric-value.orange { color: var(--orange-400); }
+    .metric-value.white { color: var(--white); }
+
+    .metric-label {
+      font-size: 0.875rem;
+      color: var(--slate-400);
+      font-weight: 500;
+    }
+
+    .metric-sub {
+      font-size: 0.75rem;
+      color: var(--slate-600);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Enterprise Section ───────────────────────── */
+    .enterprise {
+      background: var(--slate-900);
+    }
+
+    .enterprise-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .enterprise-card {
+      display: flex;
+      gap: 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: all 0.2s;
+    }
+
+    .enterprise-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .enterprise-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+
+    .enterprise-card h4 {
+      color: var(--white);
+      margin-bottom: 0.375rem;
+    }
+
+    .enterprise-card p {
+      font-size: 0.875rem;
+      color: var(--slate-400);
+    }
+
+    /* ── CTA Section ──────────────────────────────── */
+    .cta {
+      background: linear-gradient(180deg, var(--slate-900) 0%, rgba(26, 5, 54, 0.3) 50%, var(--slate-900) 100%);
+      text-align: center;
+    }
+
+    .cta-box {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .cta h2 {
+      color: var(--white);
+      margin-bottom: 1rem;
+      font-size: clamp(2rem, 4vw, 2.75rem);
+    }
+
+    .cta p {
+      font-size: 1.25rem;
+      color: var(--slate-400);
+      margin-bottom: 2.5rem;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
+    footer {
+      padding: 4rem 0 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    .footer-brand p {
+      font-size: 0.875rem;
+      color: var(--slate-500);
+      margin-top: 1rem;
+      max-width: 280px;
+    }
+
+    .footer-col h5 {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--slate-400);
+      margin-bottom: 1rem;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col li {
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-col a {
+      font-size: 0.875rem;
+      color: var(--slate-500);
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--slate-300); }
+
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8125rem;
+      color: var(--slate-600);
+    }
+
+    .footer-bottom-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-bottom-links a {
+      color: var(--slate-600);
+      font-size: 0.8125rem;
+    }
+    .footer-bottom-links a:hover {
+      color: var(--slate-400);
+    }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 1024px) {
+      .hero .container {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+      .hero-visual { max-width: 600px; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .channel-visual { grid-template-columns: 1fr; }
+      .persona-panel.active { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      section { padding: 4rem 0; }
+      .nav-links { display: none; }
+      .nav-cta .btn-secondary { display: none; }
+      .mobile-toggle { display: block; }
+      .hero { min-height: auto; padding-top: 8rem; padding-bottom: 4rem; }
+      .hero-proof { flex-direction: column; gap: 1rem; align-items: flex-start; }
+      .problem-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .persona-tabs { justify-content: flex-start; }
+      .enterprise-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+      .solution-banner { padding: 2rem 1.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+      .channel-spokes { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ NAV ═══ -->
+  <nav>
+    <div class="container">
+      <a href="#" class="nav-logo">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+          <path d="M8 12h6l-3 8h6l-8 6 3-6H8l4-8z" fill="#fff" opacity="0.9"/>
+          <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+        </svg>
+        Rasa
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Platform</a></li>
+        <li><a href="#channels">Channels</a></li>
+        <li><a href="#personas">Solutions</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#comparison">Compare</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="#cta" class="btn btn-secondary btn-sm">Talk to Sales</a>
+        <a href="#cta" class="btn btn-primary btn-sm">Start Free</a>
+      </div>
+      <button class="mobile-toggle" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('show')">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          Now Generally Available — Rasa Platform 4.0
+        </div>
+        <h1>
+          Own your AI.<br/>
+          <span class="gradient-text">Don't rent it.</span>
+        </h1>
+        <p class="hero-description">
+          The enterprise platform for building, deploying, and managing conversational AI agents across every channel — on your infrastructure, with any LLM, under your control.
+        </p>
+        <div class="hero-buttons">
+          <a href="#cta" class="btn btn-primary">
+            Request a Demo
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </a>
+          <a href="#architecture" class="btn btn-secondary">See the Architecture</a>
+        </div>
+        <div class="hero-proof">
+          <div class="hero-stat">
+            <div class="hero-stat-value">50M+</div>
+            <div class="hero-stat-label">Conversations powered monthly</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value">200+</div>
+            <div class="hero-stat-label">Enterprise customers</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value">25+</div>
+            <div class="hero-stat-label">Languages supported</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="hero-glow"></div>
+        <div class="terminal">
+          <div class="terminal-header">
+            <div class="terminal-dot red"></div>
+            <div class="terminal-dot yellow"></div>
+            <div class="terminal-dot green"></div>
+            <span class="terminal-title">rasa-deploy.sh</span>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-comment"># Deploy an agent — your cloud, your LLM, your rules</div>
+            <div>&nbsp;</div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span>
+              <span class="terminal-cmd">rasa init <span class="terminal-flag">--template</span> <span class="terminal-string">customer-support</span></span>
+            </div>
+            <div class="terminal-success">&#10003; Project created with CALM framework</div>
+            <div>&nbsp;</div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span>
+              <span class="terminal-cmd">rasa config <span class="terminal-flag">--llm</span> <span class="terminal-string">anthropic/claude-sonnet</span></span>
+            </div>
+            <div class="terminal-success">&#10003; LLM provider configured</div>
+            <div>&nbsp;</div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span>
+              <span class="terminal-cmd">rasa deploy <span class="terminal-flag">--env</span> <span class="terminal-string">production</span> <span class="terminal-flag">--channel</span> <span class="terminal-string">voice,chat,api</span></span>
+            </div>
+            <div class="terminal-output">Deploying to <span class="terminal-accent">eks-prod-us-east-1</span>...</div>
+            <div class="terminal-output">Channels: <span class="terminal-accent">voice</span> · <span class="terminal-accent">chat</span> · <span class="terminal-accent">api</span></div>
+            <div class="terminal-output">Guardrails: PII redaction <span class="terminal-success">ON</span></div>
+            <div class="terminal-output">Tracing: OpenTelemetry → Datadog <span class="terminal-success">ON</span></div>
+            <div class="terminal-success">&#10003; Agent live at agent.yourcompany.com</div>
+            <div>&nbsp;</div>
+            <div class="terminal-comment"># Zero vendor lock-in. Full data sovereignty.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ LOGOS ═══ -->
+  <div class="logos-bar">
+    <div class="container">
+      <div class="logos-label">Trusted by teams building AI at scale</div>
+      <div class="logos-grid">
+        <span class="logo-item">Deutsche Telekom</span>
+        <span class="logo-item">Roche</span>
+        <span class="logo-item">N26</span>
+        <span class="logo-item">Adobe</span>
+        <span class="logo-item">Accenture</span>
+        <span class="logo-item">Helvetia</span>
+        <span class="logo-item">Carbon Health</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PROBLEM ═══ -->
+  <section class="problem" id="problem">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">The Problem</span>
+        <h2 class="section-heading">Enterprise AI shouldn't be a forced tradeoff</h2>
+        <p class="section-subheading mx-auto">
+          Today you either give up control for speed, or keep control and spend months building plumbing instead of intelligence.
+        </p>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card bad">
+          <div class="problem-card-label">Option A: SaaS Chatbot Platforms</div>
+          <h3>Fast to start. Impossible to own.</h3>
+          <p>Vendor-hosted platforms get you running quickly — then lock you in.</p>
+          <ul class="problem-card-list">
+            <li>Customer data leaves your infrastructure</li>
+            <li>Locked to one or two LLM providers</li>
+            <li>Per-conversation pricing explodes at scale</li>
+            <li>3–6 month security review per new vendor</li>
+            <li>No visibility into model behavior</li>
+          </ul>
+        </div>
+
+        <div class="problem-card also-bad">
+          <div class="problem-card-label">Option B: DIY with LLM APIs</div>
+          <h3>Full control. Months of plumbing.</h3>
+          <p>Building from scratch with LangChain or raw APIs gives you control, but at massive cost.</p>
+          <ul class="problem-card-list">
+            <li>No dialogue management or state machine</li>
+            <li>Build your own observability from scratch</li>
+            <li>No governance, RBAC, or audit logging</li>
+            <li>Every channel requires a custom adapter</li>
+            <li>60% of engineering time on undifferentiated work</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="solution-banner">
+        <h3>Rasa: Enterprise AI you actually own</h3>
+        <p>A self-hosted, LLM-agnostic orchestration platform purpose-built for conversational AI. Full control. Production-ready from day one.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FEATURES ═══ -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">Platform</span>
+        <h2 class="section-heading">Everything you need. Nothing you don't own.</h2>
+        <p class="section-subheading mx-auto">
+          Six integrated capabilities that replace a patchwork of tools, vendors, and custom code.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- 1 -->
+        <div class="feature-card">
+          <div class="feature-icon purple">
+            <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6M9 13h4"/></svg>
+          </div>
+          <h4>CALM Agent Framework</h4>
+          <p>Define agents with declarative flows, slots, and business logic — not rigid intent trees. Hybrid state machine + LLM for deterministic control where you need it, flexibility where you don't.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">YAML Flows</span>
+            <span class="feature-tag">Multi-turn</span>
+            <span class="feature-tag">Python Actions</span>
+          </div>
+        </div>
+        <!-- 2 -->
+        <div class="feature-card">
+          <div class="feature-icon teal">
+            <svg width="24" height="24" fill="none" stroke="#5eead4" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          </div>
+          <h4>LLM-Agnostic Engine</h4>
+          <p>One unified interface for OpenAI, Anthropic, Azure, Vertex, Bedrock, Ollama, vLLM, or any OpenAI-compatible API. Route different tasks to different models by cost, latency, or quality.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Model Routing</span>
+            <span class="feature-tag">Fallback Chains</span>
+            <span class="feature-tag">Token Budgets</span>
+          </div>
+        </div>
+        <!-- 3 -->
+        <div class="feature-card">
+          <div class="feature-icon orange">
+            <svg width="24" height="24" fill="none" stroke="#fb923c" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <h4>Guardrails Engine</h4>
+          <p>PII redaction, topic boundaries, toxicity detection, hallucination checks, and custom business rules — configured at the platform level, enforced everywhere.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">PII Redaction</span>
+            <span class="feature-tag">Topic Filters</span>
+            <span class="feature-tag">Custom Rules</span>
+          </div>
+        </div>
+        <!-- 4 -->
+        <div class="feature-card">
+          <div class="feature-icon purple">
+            <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>
+          <h4>Rasa Studio</h4>
+          <p>Visual flow editor for conversation designers. Author, simulate, and iterate on dialogue without writing code. Test any conversation path end-to-end from the browser.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Visual Editor</span>
+            <span class="feature-tag">Simulator</span>
+            <span class="feature-tag">Component Library</span>
+          </div>
+        </div>
+        <!-- 5 -->
+        <div class="feature-card">
+          <div class="feature-icon teal">
+            <svg width="24" height="24" fill="none" stroke="#5eead4" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <h4>Full-Stack Observability</h4>
+          <p>End-to-end tracing for every turn: NLU to policy to LLM to action to response. OpenTelemetry-native. LLM cost attribution by agent, flow, and provider.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">OpenTelemetry</span>
+            <span class="feature-tag">Cost Attribution</span>
+            <span class="feature-tag">Conversation Explorer</span>
+          </div>
+        </div>
+        <!-- 6 -->
+        <div class="feature-card">
+          <div class="feature-icon orange">
+            <svg width="24" height="24" fill="none" stroke="#fb923c" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h4>Enterprise Governance</h4>
+          <p>RBAC, SSO/SAML, immutable audit logs, PII handling, data retention policies, and approval workflows for production deployments. Built for regulated industries.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">RBAC</span>
+            <span class="feature-tag">SSO / SAML</span>
+            <span class="feature-tag">Audit Logs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CHANNELS ═══ -->
+  <section class="channels" id="channels">
+    <div class="container">
+      <div class="channel-visual">
+        <div class="channel-diagram">
+          <div class="channel-center">
+            <h4>Rasa Orchestration Engine</h4>
+            <p>One agent definition. Every channel.</p>
+          </div>
+          <div class="channel-spokes">
+            <div class="channel-spoke">
+              <div class="channel-spoke-icon">
+                <svg width="28" height="28" fill="none" stroke="#a78bfa" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              </div>
+              <div class="channel-spoke-label">Voice</div>
+              <div class="channel-spoke-sub">Twilio, Genesys, Connect</div>
+            </div>
+            <div class="channel-spoke">
+              <div class="channel-spoke-icon">
+                <svg width="28" height="28" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              </div>
+              <div class="channel-spoke-label">Web Chat</div>
+              <div class="channel-spoke-sub">Widget, Mobile SDK</div>
+            </div>
+            <div class="channel-spoke">
+              <div class="channel-spoke-icon">
+                <svg width="28" height="28" fill="none" stroke="#fb923c" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <div class="channel-spoke-label">WhatsApp</div>
+              <div class="channel-spoke-sub">Business API</div>
+            </div>
+            <div class="channel-spoke">
+              <div class="channel-spoke-icon">
+                <svg width="28" height="28" fill="none" stroke="#a78bfa" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="18" y="3" width="7" height="7" rx="1"/><rect x="3" y="18" width="7" height="7" rx="1"/><path d="M14 7h4M7 14v4M18 14v7h-4"/></svg>
+              </div>
+              <div class="channel-spoke-label">Slack</div>
+              <div class="channel-spoke-sub">Workspace App</div>
+            </div>
+            <div class="channel-spoke">
+              <div class="channel-spoke-icon">
+                <svg width="28" height="28" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
+              <div class="channel-spoke-label">MS Teams</div>
+              <div class="channel-spoke-sub">Enterprise</div>
+            </div>
+            <div class="channel-spoke">
+              <div class="channel-spoke-icon">
+                <svg width="28" height="28" fill="none" stroke="#fb923c" stroke-width="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div class="channel-spoke-label">REST API</div>
+              <div class="channel-spoke-sub">gRPC + REST</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="channel-info">
+          <span class="section-label">Multi-Channel</span>
+          <h2>One agent. Every channel.<br/>Zero duplication.</h2>
+          <p>Define your agent logic once. Rasa handles channel-specific rendering — voice SSML, chat rich cards, API JSON — at the edge.</p>
+          <ul class="channel-benefits">
+            <li>
+              <span class="check">&#10003;</span>
+              <span>Single dialogue definition serves voice, chat, messaging, and API channels simultaneously</span>
+            </li>
+            <li>
+              <span class="check">&#10003;</span>
+              <span>Seamless human handoff with full context to Zendesk, Salesforce, Genesys, or ServiceNow</span>
+            </li>
+            <li>
+              <span class="check">&#10003;</span>
+              <span>Choose your own STT/TTS provider — no lock-in on speech either</span>
+            </li>
+            <li>
+              <span class="check">&#10003;</span>
+              <span>Embeddable web widget and native mobile SDKs for iOS and Android</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PERSONAS / SOLUTIONS ═══ -->
+  <section class="personas" id="personas">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">Built for Your Role</span>
+        <h2 class="section-heading">One platform, every team</h2>
+        <p class="section-subheading mx-auto">
+          From AI leaders to conversation designers to platform engineers — Rasa meets each role where they work.
+        </p>
+      </div>
+
+      <div class="persona-tabs">
+        <button class="persona-tab active" onclick="switchPersona(0)">AI Leaders</button>
+        <button class="persona-tab" onclick="switchPersona(1)">Conversation Designers</button>
+        <button class="persona-tab" onclick="switchPersona(2)">Platform Engineers</button>
+        <button class="persona-tab" onclick="switchPersona(3)">CX Managers</button>
+      </div>
+
+      <!-- Maya -->
+      <div class="persona-panel active" id="persona-0">
+        <div class="persona-profile">
+          <div class="persona-avatar" style="background: linear-gradient(135deg, var(--purple-700), var(--purple-500));">M</div>
+          <div class="persona-name">Maya Chen</div>
+          <div class="persona-role">Head of Conversational AI</div>
+          <div class="persona-quote">
+            "I don't want to rent AI — I want to own it. My board asks me every quarter who has access to our customer data, and 'some SaaS vendor's cloud' is not an acceptable answer."
+          </div>
+          <div class="persona-pains-label">Top Pain Points</div>
+          <ul class="persona-pains">
+            <li><span class="pain-icon">&#9679;</span> Vendor lock-in — SaaS tools control infrastructure, data, and LLM choice</li>
+            <li><span class="pain-icon">&#9679;</span> Fragmentation — voice, chat, and internal bots on 3 different platforms</li>
+            <li><span class="pain-icon">&#9679;</span> Compliance — each new vendor triggers a 3–6 month security review</li>
+            <li><span class="pain-icon">&#9679;</span> Designers blocked — every flow change requires engineering</li>
+          </ul>
+        </div>
+        <div class="persona-solution">
+          <h3>How Rasa helps AI leaders</h3>
+          <div class="persona-solution-item">
+            <h4>Full infrastructure ownership</h4>
+            <p>Deploy on your own AWS, Azure, GCP, or on-prem Kubernetes cluster. Customer data never leaves your VPC. Skip the vendor security review.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Replace 3 tools with 1 platform</h4>
+            <p>Consolidate voice IVR, web chat, WhatsApp, and internal bots onto a single platform with one agent definition that serves every channel.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>LLM freedom — swap without rewriting</h4>
+            <p>Use OpenAI today, Anthropic tomorrow, your own fine-tuned model next quarter. One config change. No agent logic rewritten.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Ship agents in weeks, not months</h4>
+            <p>CALM framework + pre-built components + visual editor cuts time-to-production from 12 weeks to under 3.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jordan -->
+      <div class="persona-panel" id="persona-1">
+        <div class="persona-profile">
+          <div class="persona-avatar" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">J</div>
+          <div class="persona-name">Jordan Reeves</div>
+          <div class="persona-role">Senior Conversation Designer</div>
+          <div class="persona-quote">
+            "I can design a better conversation in 20 minutes than it takes engineering to deploy a one-line copy change. I just need a tool that lets me."
+          </div>
+          <div class="persona-pains-label">Top Pain Points</div>
+          <ul class="persona-pains">
+            <li><span class="pain-icon">&#9679;</span> Every change requires an engineer, a PR, and a CI/CD cycle</li>
+            <li><span class="pain-icon">&#9679;</span> Voice and chat bots use completely separate authoring systems</li>
+            <li><span class="pain-icon">&#9679;</span> No conversation simulator — must deploy to staging to test</li>
+            <li><span class="pain-icon">&#9679;</span> A/B testing requires platform engineering support</li>
+          </ul>
+        </div>
+        <div class="persona-solution">
+          <h3>How Rasa helps conversation designers</h3>
+          <div class="persona-solution-item">
+            <h4>Design conversations, don't code them</h4>
+            <p>Rasa Studio's visual flow editor lets you author, branch, and iterate on dialogue flows with drag-and-drop — no Python, no PRs, no waiting on engineers.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Test before you ship</h4>
+            <p>Built-in conversation simulator lets you walk through any path end-to-end — with slot filling, API responses, and NLU confidence — from your browser.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>One flow, every channel</h4>
+            <p>Design a "lost card" flow once and deploy it to voice, web chat, and WhatsApp simultaneously. No more maintaining duplicate flows.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Reusable component library</h4>
+            <p>Authentication, disambiguation, human handoff, slot confirmation — pre-built, configurable components you drag in and customize.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raj -->
+      <div class="persona-panel" id="persona-2">
+        <div class="persona-profile">
+          <div class="persona-avatar" style="background: linear-gradient(135deg, #c2410c, #f97316);">R</div>
+          <div class="persona-name">Raj Patel</div>
+          <div class="persona-role">Senior Platform / MLOps Engineer</div>
+          <div class="persona-quote">
+            "I don't need another AI tool — I need an AI platform that behaves like production infrastructure. Give me Helm charts, OTel traces, and GitOps. I'll handle the rest."
+          </div>
+          <div class="persona-pains-label">Top Pain Points</div>
+          <ul class="persona-pains">
+            <li><span class="pain-icon">&#9679;</span> No end-to-end tracing across the agent pipeline</li>
+            <li><span class="pain-icon">&#9679;</span> LLM costs are a black box — no per-agent attribution</li>
+            <li><span class="pain-icon">&#9679;</span> Each agent team builds their own deployment pipeline</li>
+            <li><span class="pain-icon">&#9679;</span> Rollback is manual with extended outage risk</li>
+          </ul>
+        </div>
+        <div class="persona-solution">
+          <h3>How Rasa helps platform engineers</h3>
+          <div class="persona-solution-item">
+            <h4>GitOps-native. Helm chart included.</h4>
+            <p>Agent definitions as code in Git. Helm chart + Terraform modules for EKS, AKS, GKE, or OpenShift. ArgoCD and Flux compatible out of the box.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>End-to-end OpenTelemetry tracing</h4>
+            <p>Distributed traces spanning NLU, policy engine, LLM calls, custom actions, and responses. Export to Jaeger, Datadog, or Grafana Tempo. MTTR drops from hours to minutes.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>LLM cost attribution</h4>
+            <p>Token usage and cost broken down by agent, flow, and LLM provider. Rate limits, budget alerts, and exportable reports for finance.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Zero-downtime deploys with instant rollback</h4>
+            <p>Blue-green and canary rollouts for agent updates. One-click rollback. Auto-scaling based on conversation concurrency. Fallback chains when an LLM provider degrades.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Luis -->
+      <div class="persona-panel" id="persona-3">
+        <div class="persona-profile">
+          <div class="persona-avatar" style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">L</div>
+          <div class="persona-name">Luis Moreno</div>
+          <div class="persona-role">Director of Customer Experience</div>
+          <div class="persona-quote">
+            "I don't care what LLM you use. I care that my customers don't have to say their account number twice."
+          </div>
+          <div class="persona-pains-label">Top Pain Points</div>
+          <ul class="persona-pains">
+            <li><span class="pain-icon">&#9679;</span> AI and human agent metrics live in separate dashboards</li>
+            <li><span class="pain-icon">&#9679;</span> Escalation to humans loses all conversation context</li>
+            <li><span class="pain-icon">&#9679;</span> No way to flag bad AI responses without filing engineering tickets</li>
+            <li><span class="pain-icon">&#9679;</span> Containment rate numbers don't match actual call deflection</li>
+          </ul>
+        </div>
+        <div class="persona-solution">
+          <h3>How Rasa helps CX leaders</h3>
+          <div class="persona-solution-item">
+            <h4>Real-time performance dashboard</h4>
+            <p>Containment rate, CSAT proxy, average handle time, escalation rate, and cost per resolution — per agent, per channel, refreshed continuously.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Seamless human handoff with full context</h4>
+            <p>When the AI escalates, the human agent's screen pop in Salesforce, Genesys, or ServiceNow shows the complete conversation transcript and extracted entities.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Feedback loop built in</h4>
+            <p>Flag bad AI responses directly from the conversation explorer. Flagged conversations route to the design team automatically — no Jira ticket required.</p>
+          </div>
+          <div class="persona-solution-item">
+            <h4>Export to your BI tools</h4>
+            <p>Reporting API exports AI agent metrics into Tableau, PowerBI, or Looker alongside your existing human agent data for true blended performance analysis.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ARCHITECTURE ═══ -->
+  <section class="architecture" id="architecture">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">Architecture</span>
+        <h2 class="section-heading">Production-grade from the first deploy</h2>
+        <p class="section-subheading mx-auto">
+          A modular, self-hosted architecture that runs on your Kubernetes cluster and integrates with your existing infrastructure.
+        </p>
+      </div>
+
+      <div class="arch-diagram">
+        <div class="arch-layers">
+          <div class="arch-layer authoring">
+            <div class="arch-layer-label">Authoring Layer</div>
+            <div class="arch-layer-items">
+              <div class="arch-item">Rasa Studio (Visual)</div>
+              <div class="arch-item">CLI / Git (Code-first)</div>
+              <div class="arch-item">Admin API</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow">&#8595;</div>
+
+          <div class="arch-layer engine">
+            <div class="arch-layer-label">Orchestration Engine</div>
+            <div class="arch-layer-items">
+              <div class="arch-item">NLU Pipeline</div>
+              <div class="arch-item">CALM Policy Engine</div>
+              <div class="arch-item">LLM Connector</div>
+              <div class="arch-item">Guardrails</div>
+              <div class="arch-item">Action Server</div>
+              <div class="arch-item">Agent Registry</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow">&#8595;</div>
+
+          <div class="arch-layer channels-layer">
+            <div class="arch-layer-label">Channel Gateways</div>
+            <div class="arch-layer-items">
+              <div class="arch-item">Voice (Twilio, Genesys, Connect)</div>
+              <div class="arch-item">Chat (Web, Mobile)</div>
+              <div class="arch-item">Messaging (WhatsApp, Slack, Teams)</div>
+              <div class="arch-item">REST / gRPC API</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow">&#8595;</div>
+
+          <div class="arch-layer infra">
+            <div class="arch-layer-label">Your Infrastructure</div>
+            <div class="arch-layer-items">
+              <div class="arch-item">Kubernetes (EKS / AKS / GKE / OpenShift)</div>
+              <div class="arch-item">Any LLM Provider</div>
+              <div class="arch-item">OpenTelemetry → Your Stack</div>
+              <div class="arch-item">Your Identity Provider (SAML/OIDC)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ METRICS ═══ -->
+  <section class="metrics" id="metrics">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">Results</span>
+        <h2 class="section-heading">Built for outcomes that matter</h2>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value purple">&lt;3 wk</div>
+          <div class="metric-label">Time to first production agent</div>
+          <div class="metric-sub">Down from 12+ weeks</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value teal">80%+</div>
+          <div class="metric-label">Containment rate</div>
+          <div class="metric-sub">Conversations resolved without escalation</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value orange">&lt;15 min</div>
+          <div class="metric-label">Mean time to diagnose</div>
+          <div class="metric-sub">With end-to-end tracing</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value white">99.95%</div>
+          <div class="metric-label">Platform uptime SLA</div>
+          <div class="metric-sub">Enterprise-grade reliability</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ COMPARISON ═══ -->
+  <section class="comparison" id="comparison">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">Compare</span>
+        <h2 class="section-heading">How Rasa stacks up</h2>
+        <p class="section-subheading mx-auto">
+          Side-by-side with the alternatives — so you can make the case with confidence.
+        </p>
+      </div>
+
+      <div class="comparison-table-wrap">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th class="highlight">Rasa</th>
+              <th>SaaS Chatbot Vendors</th>
+              <th>DIY (LangChain + custom)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Infrastructure ownership</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Full — self-hosted</td>
+              <td><span class="x-icon">&#10005;</span> Vendor cloud only</td>
+              <td><span class="partial-icon">&#9679;</span> Full but unmanaged</td>
+            </tr>
+            <tr>
+              <td>LLM flexibility</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Any provider, any model</td>
+              <td><span class="x-icon">&#10005;</span> 1–2 providers</td>
+              <td><span class="partial-icon">&#9679;</span> Any, manual wiring</td>
+            </tr>
+            <tr>
+              <td>Dialogue management</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Hybrid (deterministic + LLM)</td>
+              <td><span class="partial-icon">&#9679;</span> Varies, often LLM-only</td>
+              <td><span class="x-icon">&#10005;</span> None built-in</td>
+            </tr>
+            <tr>
+              <td>Multi-channel</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Unified — voice, chat, API</td>
+              <td><span class="partial-icon">&#9679;</span> Partial</td>
+              <td><span class="x-icon">&#10005;</span> Build your own</td>
+            </tr>
+            <tr>
+              <td>Governance / RBAC</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Built-in (RBAC, SSO, audit)</td>
+              <td><span class="partial-icon">&#9679;</span> Varies</td>
+              <td><span class="x-icon">&#10005;</span> Build your own</td>
+            </tr>
+            <tr>
+              <td>Observability</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> OTel tracing + analytics</td>
+              <td><span class="partial-icon">&#9679;</span> Dashboard only</td>
+              <td><span class="x-icon">&#10005;</span> Build your own</td>
+            </tr>
+            <tr>
+              <td>Time to production</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Weeks</td>
+              <td><span class="check-icon">&#10003;</span> Days (limited scope)</td>
+              <td><span class="x-icon">&#10005;</span> Months</td>
+            </tr>
+            <tr>
+              <td>Guardrails engine</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Platform-level, configurable</td>
+              <td><span class="partial-icon">&#9679;</span> Basic</td>
+              <td><span class="x-icon">&#10005;</span> Build your own</td>
+            </tr>
+            <tr>
+              <td>Cost model</td>
+              <td class="highlight"><span class="check-icon">&#10003;</span> Predictable subscription</td>
+              <td><span class="x-icon">&#10005;</span> Per-conversation (scales poorly)</td>
+              <td><span class="check-icon">&#10003;</span> Infra cost only</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ENTERPRISE ═══ -->
+  <section class="enterprise" id="enterprise">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 3rem;">
+        <span class="section-label">Enterprise-Ready</span>
+        <h2 class="section-heading">Built for teams that can't afford to get it wrong</h2>
+        <p class="section-subheading mx-auto">
+          Governance, compliance, and operational controls for regulated industries — out of the box.
+        </p>
+      </div>
+
+      <div class="enterprise-grid">
+        <div class="enterprise-card">
+          <div class="enterprise-icon">
+            <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" transform="translate(-2,-1) scale(0.9)"/></svg>
+          </div>
+          <div>
+            <h4>Self-Hosted &amp; Air-Gapped</h4>
+            <p>Run on your Kubernetes cluster. Fully functional without internet for defense, government, and high-security environments.</p>
+          </div>
+        </div>
+        <div class="enterprise-card">
+          <div class="enterprise-icon">
+            <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="3" y="11" width="14" height="8" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4" transform="translate(-2,0) scale(0.9)"/></svg>
+          </div>
+          <div>
+            <h4>SSO / SAML / OIDC</h4>
+            <p>Enterprise identity provider integration with role-based access control — Admin, Developer, Designer, Viewer, Auditor.</p>
+          </div>
+        </div>
+        <div class="enterprise-card">
+          <div class="enterprise-icon">
+            <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" transform="translate(-2,-1) scale(0.85)"/><path d="M14 2v6h6M10 13H8M14 17H8M10 9H8" transform="translate(-2,-1) scale(0.85)"/></svg>
+          </div>
+          <div>
+            <h4>Immutable Audit Logs</h4>
+            <p>Every configuration change, deployment, model swap, and access event — logged, timestamped, and tamper-proof.</p>
+          </div>
+        </div>
+        <div class="enterprise-card">
+          <div class="enterprise-icon">
+            <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" transform="translate(2,0) scale(0.85)"/><circle cx="9" cy="7" r="4" transform="translate(2,0) scale(0.85)"/></svg>
+          </div>
+          <div>
+            <h4>PII Redaction &amp; Data Retention</h4>
+            <p>Configurable PII detection and redaction in logs, analytics, and LLM prompts. Automated data purge on your schedule.</p>
+          </div>
+        </div>
+        <div class="enterprise-card">
+          <div class="enterprise-icon">
+            <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><polyline points="16 3 21 3 21 8" transform="scale(0.85) translate(2,2)"/><line x1="4" y1="20" x2="21" y2="3" transform="scale(0.85) translate(2,2)"/></svg>
+          </div>
+          <div>
+            <h4>GitOps &amp; CI/CD Native</h4>
+            <p>Agent definitions as code. Helm + Terraform modules included. ArgoCD and Flux compatible. PR-based promotion with approval gates.</p>
+          </div>
+        </div>
+        <div class="enterprise-card">
+          <div class="enterprise-icon">
+            <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="10" cy="10" r="7" transform="scale(0.85) translate(2,2)"/><path d="M10 6v4l3 3" transform="scale(0.85) translate(2,2)"/></svg>
+          </div>
+          <div>
+            <h4>Approval Workflows</h4>
+            <p>Require designated reviewer sign-off before agent changes reach production. Diff previews across Dev, Staging, and Production.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta" id="cta">
+    <div class="container">
+      <div class="cta-box">
+        <span class="section-label">Get Started</span>
+        <h2>Stop renting your AI.<br/>Start owning it.</h2>
+        <p>See how Rasa gives your team full control of conversational AI — on your infrastructure, with any LLM, in production in weeks.</p>
+        <div class="cta-buttons">
+          <a href="#" class="btn btn-primary">
+            Request a Demo
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </a>
+          <a href="#" class="btn btn-secondary">Read the Docs</a>
+          <a href="#" class="btn btn-ghost">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <rect width="32" height="32" rx="8" fill="url(#logo-grad2)"/>
+              <path d="M8 12h6l-3 8h6l-8 6 3-6H8l4-8z" fill="#fff" opacity="0.9"/>
+              <defs><linearGradient id="logo-grad2" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+            </svg>
+            Rasa
+          </div>
+          <p>The enterprise platform for conversational AI you actually own. Self-hosted. LLM-agnostic. Production-ready.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Product</h5>
+          <ul>
+            <li><a href="#features">Platform</a></li>
+            <li><a href="#channels">Channels</a></li>
+            <li><a href="#">Rasa Studio</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Developers</h5>
+          <ul>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">GitHub</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Status</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Security</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Rasa Technologies Inc. All rights reserved.</span>
+        <div class="footer-bottom-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Security</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function switchPersona(index) {
+      document.querySelectorAll('.persona-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+      });
+      document.querySelectorAll('.persona-panel').forEach((panel, i) => {
+        panel.classList.toggle('active', i === index);
+      });
+    }
+
+    // Subtle scroll-triggered fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.feature-card, .metric-card, .enterprise-card, .problem-card, .persona-solution-item').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+      });
+    });
+  </script>
+</body>
+</html>
